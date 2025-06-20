@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暴打瓦学弟</title>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; }
+        #input-container {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 100;
+        }
+        #name-input {
+            width: 80%;
+            padding: 10px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div id="input-container">
+        <input type="text" id="name-input" placeholder="输入要暴打的人的名字" value="瓦学弟">
+        <div style="margin-top:10px;color:#666;">作者：cyl</div>
+        <button id="start-btn">开始</button>
+    </div>
+    <canvas id="game-canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const nameInput = document.getElementById('name-input');
+        const startBtn = document.getElementById('start-btn');
+        
+        // 设置画布尺寸
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // 游戏状态
+        let gameStarted = false;
+        let inputText = "";
+        let bodyParts = {
+            head: { x: canvas.width/2, y: canvas.height/3, angle: 0, scale: 1, hit: false, frames: 0 },
+            torso: { x: canvas.width/2, y: canvas.height/2, angle: 0, scale: 1, hit: false, frames: 0 },
+            leftArm: { x: canvas.width/2 - 60, y: canvas.height/2, angle: 0, scale: 1, hit: false, frames: 0 },
+            rightArm: { x: canvas.width/2 + 60, y: canvas.height/2, angle: 0, scale: 1, hit: false, frames: 0 },
+            leftLeg: { x: canvas.width/2 - 30, y: canvas.height/2 + 180, angle: 0, scale: 1, hit: false, frames: 0 },
+            rightLeg: { x: canvas.width/2 + 30, y: canvas.height/2 + 180, angle: 0, scale: 1, hit: false, frames: 0 }
+        };
+        
+        // 颜色定义
+        const colors = {
+            white: '#FFFFFF',
+            black: '#000000',
+            red: '#FF0000',
+            skin: '#FFDAB9',
+            shirt: '#6495ED',
+            pants: '#8B4513'
+        };
+        
+        // 开始游戏
+        startBtn.addEventListener('click', () => {
+            if (nameInput.value.trim()) {
+                inputText = nameInput.value;
+                gameStarted = true;
+                document.getElementById('input-container').style.display = 'none';
+            }
+        });
+        
+        // 触摸/点击事件处理
+        canvas.addEventListener('touchstart', handleHit);
+        canvas.addEventListener('mousedown', handleHit);
+        
+        function handleHit(e) {
+            if (!gameStarted) return;
+            
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            
+            const hitPart = checkHitPart(x, y);
+            if (hitPart) {
+                applyHitEffect(hitPart);
+            }
+        }
+        
+        // 游戏主循环
+        function gameLoop() {
+            ctx.fillStyle = colors.white;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            if (gameStarted) {
+                // 绘制人物名字
+                ctx.fillStyle = colors.red;
+                ctx.font = '30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`正在暴打瓦学弟: ${inputText}`, canvas.width/2, 50);
+                
+                // 绘制人物
+                drawPerson();
+                
+                // 更新动画状态
+                updateAnimations();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // 绘制人物
+        function drawPerson() {
+            // 腿部
+            drawLimb(bodyParts.leftLeg, bodyParts.torso, 30, colors.pants);
+            drawLimb(bodyParts.rightLeg, bodyParts.torso, 30, colors.pants);
+            
+            // 躯干
+            drawTorso(bodyParts.torso);
+            
+            // 手臂
+            drawLimb(bodyParts.leftArm, bodyParts.torso, 25, colors.skin);
+            drawLimb(bodyParts.rightArm, bodyParts.torso, 25, colors.skin);
+            
+            // 头部
+            drawHead(bodyParts.head);
+        }
+        
+        // 绘制头部
+        function drawHead(head) {
+            ctx.save();
+            ctx.translate(head.x, head.y);
+            ctx.rotate(head.angle * Math.PI / 180);
+            ctx.scale(head.scale, head.scale);
+            
+            // 头部
+            ctx.beginPath();
+            ctx.arc(0, 0, 30, 0, Math.PI * 2);
+            ctx.fillStyle = colors.skin;
+            ctx.fill();
+            
+            // 眼睛
+            ctx.beginPath();
+            ctx.arc(-15, -10, 5, 0, Math.PI * 2);
+            ctx.arc(15, -10, 5, 0, Math.PI * 2);
+            ctx.fillStyle = colors.black;
+            ctx.fill();
+            
+            // 嘴巴
+            ctx.beginPath();
+            ctx.arc(0, 5, 10, Math.PI/4, 3*Math.PI/4);
+            ctx.strokeStyle = colors.red;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        // 绘制躯干
+        function drawTorso(torso) {
+            ctx.save();
+            ctx.translate(torso.x, torso.y);
+            ctx.rotate(torso.angle * Math.PI / 180);
+            ctx.scale(torso.scale, torso.scale);
+            
+            ctx.beginPath();
+            ctx.roundRect(-25, -45, 50, 90, 10);
+            ctx.fillStyle = colors.shirt;
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        // 绘制肢体
+        function drawLimb(limb, connectTo, width, color) {
+            ctx.save();
+            
+            ctx.beginPath();
+            ctx.moveTo(limb.x, limb.y);
+            ctx.lineTo(connectTo.x, connectTo.y);
+            ctx.lineWidth = width;
+            ctx.strokeStyle = color;
+            ctx.stroke();
+            
+            // 绘制肢体末端
+            ctx.beginPath();
+            ctx.arc(limb.x, limb.y, width/2, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        // 检查点击部位
+        function checkHitPart(x, y) {
+            // 头部检测
+            if (Math.sqrt((x-bodyParts.head.x)**2 + (y-bodyParts.head.y)**2) <= 30 * bodyParts.head.scale) {
+                return 'head';
+            }
+            
+            // 躯干检测
+            if (Math.abs(x-bodyParts.torso.x) <= 25 * bodyParts.torso.scale && 
+                Math.abs(y-bodyParts.torso.y) <= 45 * bodyParts.torso.scale) {
+                return 'torso';
+            }
+            
+            // 四肢检测
+            for (const part of ['leftArm', 'rightArm', 'leftLeg', 'rightLeg']) {
+                if (Math.sqrt((x-bodyParts[part].x)**2 + (y-bodyParts[part].y)**2) <= 40) {
+                    return part;
+                }
+            }
+            
+            return null;
+        }
+        
+        // 应用击打效果
+        function applyHitEffect(part) {
+            bodyParts[part].hit = true;
+            bodyParts[part].frames = 30;
+            
+            // 随机位移和旋转
+            bodyParts[part].x += (Math.random() - 0.5) * 100;
+            bodyParts[part].y += (Math.random() - 0.5) * 100;
+            bodyParts[part].angle = (Math.random() - 0.5) * 90;
+            bodyParts[part].scale = 0.8 + Math.random() * 0.4;
+        }
+        
+        // 更新动画状态
+        function updateAnimations() {
+            for (const part in bodyParts) {
+                if (bodyParts[part].hit) {
+                    bodyParts[part].frames--;
+                    
+                    if (bodyParts[part].frames <= 0) {
+                        bodyParts[part].hit = false;
+                        // 缓慢复位
+                        bodyParts[part].x += (canvas.width/2 - bodyParts[part].x) * 0.1;
+                        bodyParts[part].y += (canvas.height/2 - bodyParts[part].y) * 0.1;
+                        bodyParts[part].angle *= 0.9;
+                        bodyParts[part].scale = 1;
+                    }
+                }
+            }
+        }
+        
+        // 启动游戏循环
+        gameLoop();
+    </script>
+</body>
+</html>
